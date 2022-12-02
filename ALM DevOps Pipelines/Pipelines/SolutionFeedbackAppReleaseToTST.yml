@@ -1,0 +1,25 @@
+trigger: none
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  - group: 'TST01library'
+
+resources:
+  repositories:
+  - repository: GitRepoBuild
+    type: git
+    name: 'Feedback App/Feedback App'
+    ref: '$(Build.SourceBranchName)'
+
+stages:
+- stage: 'releasetst01'
+  displayName: 'Release from TST01'
+  jobs:
+  - template: 'Templates/ReleaseSolutionOneGitOneBranche.yml'
+    parameters:
+     connectionString: '$(EnvironmentServiceConnection)'
+     environment: 'TST01'
+     #gitBrancheObjectRelease: GitRepoRelease
+     SolutionInternalName: '$(PowerPlatformSolution01)'   

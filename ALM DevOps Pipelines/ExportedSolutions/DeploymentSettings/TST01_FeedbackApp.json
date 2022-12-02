@@ -1,0 +1,23 @@
+{
+    "EnvironmentVariables": [
+      {
+        "SchemaName": "ins_EVSharePointListFeedbackAppResponses",
+        "Value": "49bb3b16-a8a4-453e-9cd3-c30bde15258f"
+      },
+      {
+        "SchemaName": "ins_EVSharePointListFeedbackAppSurveys",
+        "Value": "31567904-9ea9-4868-93c4-0936ac2b28f8"
+      },
+      {
+        "SchemaName": "ins_EVSharePointSiteFeedbackApp",
+        "Value": "https://crmbc498820.sharepoint.com/sites/FeedbackAppTST"
+      }
+    ],
+    "ConnectionReferences": [
+      {
+        "LogicalName": "ins_CRSharePointFeedbackApp",
+        "ConnectionId": "c9a4a538d9384d05881339e515bedbeb",
+        "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+      }
+    ]
+  }

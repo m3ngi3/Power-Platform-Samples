@@ -1,0 +1,28 @@
+trigger: none
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  - group: 'DEV01library'
+
+resources:
+  repositories:
+  - repository: GitRepoBuild
+    type: git
+    name: 'Feedback App/Feedback App'
+    ref: '$(Build.SourceBranchName)'
+
+stages:
+- stage: 'builddev01'
+  displayName: 'Build from DEV01'
+  jobs:
+    - job: 'Build01'
+      displayName: '$(PowerPlatformSolution01) build'
+      steps:
+      - template: 'Templates/BuildSolutionOneGitOwnBranche.yml'
+        parameters:
+          connectionString: '$(EnvironmentServiceConnection)'         
+          SolutionInternalName: $(PowerPlatformSolution01)        
+          SolutionVersionPrefix: '$(SolutionVersionPrefix)'
+          gitUserEmail: '$(gitUserEmailPipeline)'

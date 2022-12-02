@@ -1,0 +1,55 @@
+parameters:
+- name: 'asyncTimeout'
+  type: number
+  default: 3600
+
+- name: 'connectionString'
+  type: string
+
+- name: 'environment'
+  type: string
+
+- name: 'SolutionInternalName'
+  type: string
+
+- name: 'dependsOn'
+  type: object
+  default: []
+
+- name: 'runCondition'
+  type: string
+  default: 'succeeded()'
+
+jobs:
+   - deployment: 'ReleaseSolutionOneGitOneBranche'
+     displayName: 'Release Solution ${{ parameters.SolutionInternalName }} to the ${{ parameters.environment }} environment'
+     condition: '${{ parameters.runCondition }}'
+     dependsOn: ${{ parameters.dependsOn }}     
+
+     pool:
+      vmImage: windows-latest
+
+     environment: ${{ parameters.environment }}
+
+     strategy:
+      runOnce:
+        deploy:
+
+          steps:
+            - checkout: self  #Allows local login 'git://Expert Team BA/Power Platform Applications' is not adding value because Pipeline will run from desired branch itself --> how about multi git repo's?
+              persistCredentials: true
+
+            - task: PowerPlatformToolInstaller@2 #Always Install this when using PowerPlatformBuiltTools on machine
+              displayName: 'Power Platform Tool Installer'
+
+            # Solutions logic #
+            - task: PowerPlatformImportSolution@2
+              displayName: 'Install solution ${{ parameters.SolutionInternalName }}'
+              inputs:
+                authenticationType: 'PowerPlatformSPN'
+                PowerPlatformSPN: ${{ parameters.connectionString }}
+                SolutionInputFile: '$(System.DefaultWorkingDirectory)/$(GitDirectoryExportedSolutions)/${{ parameters.SolutionInternalName }}M.zip'
+                UseDeploymentSettingsFile: true
+                DeploymentSettingsFile: '$(GitDirectoryExportedSolutions)\DeploymentSettings\${{ parameters.environment }}_${{ parameters.SolutionInternalName }}.json'
+                AsyncOperation: true
+                MaxAsyncWaitTime: '60'

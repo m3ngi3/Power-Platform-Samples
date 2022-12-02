@@ -1,0 +1,131 @@
+parameters:
+- name: 'asyncTimeout'
+  type: number
+  default: 3600
+
+- name: 'connectionString'
+  type: string
+
+- name: 'gitUserEmail'
+  type: string
+
+- name: 'SolutionInternalName'
+  type: string
+
+- name: 'SolutionVersionPreFix'
+  type: string
+
+steps:
+      - checkout: self
+        persistCredentials: true
+
+      - task: PowerPlatformToolInstaller@2 #Always Install this when using PowerPlatformBuiltTools on machine
+        displayName: 'Power Platform Tool Installer'
+
+      # Solutions logic #
+      - task: PowerPlatformSetSolutionVersion@2 #Set Version in DEV with unique Build Number included
+        displayName: 'Solution Versioning'
+        inputs:
+          authenticationType: 'PowerPlatformSPN'
+          PowerPlatformSPN: ${{ parameters.connectionString }}
+          SolutionName: '${{ parameters.SolutionInternalName }}'
+          SolutionVersionNumber: '${{ parameters.SolutionVersionPrefix }}.$(Build.BuildNumber)'
+
+      - task: PowerPlatformPublishCustomizations@2 #Publish Environment Customizations
+        displayName: 'Solutions - Publish customizations'
+        inputs:
+          authenticationType: 'PowerPlatformSPN'
+          PowerPlatformSPN: ${{ parameters.connectionString }}
+
+      - task: PowerPlatformExportSolution@2 #Export Unmanaged Solution to machine as .zip file locally
+        displayName: 'Solutions - UnmSol zip export zip locally'
+        inputs:
+          authenticationType: 'PowerPlatformSPN'
+          PowerPlatformSPN: ${{ parameters.connectionString }}
+          SolutionName: '${{ parameters.SolutionInternalName }}'
+          SolutionOutputFile: '$(GitDirectoryExportedSolutions)\${{ parameters.SolutionInternalName }}UM.zip'
+          AsyncOperation: true
+          MaxAsyncWaitTime: '60'
+          ExportAutoNumberingSettings: true
+
+      - task: PowerShell@2  #Push Unmanaged Solution .zip file to Git Repo 
+        displayName: 'Solutions - UnmSol zip to repo'
+        inputs:
+          targetType: 'inline'
+          script: |      
+            # Write your PowerShell commands here.        
+            ls ${env:GitDirectoryExportedSolutions}
+            git config --global user.email ${{ parameters.gitUserEmail }}
+            git config --global user.name ${{ parameters.gitUserEmail }}
+            git fetch --all
+            git checkout $(Build.SourceBranchName)
+            git add ${env:GitDirectoryExportedSolutions}
+            git commit -am "Added Solution Export ${{ parameters.SolutionInternalName }}UM V${{ parameters.SolutionVersionPrefix }}.$(Build.BuildNumber) as zip"
+            git push origin $(Build.SourceBranchName)
+
+      - task: PowerPlatformUnpackSolution@2 #Unpack Unmanaged Solution .zip file locally
+        displayName: 'Solutions - UnmSol zip unpack locally'
+        inputs:
+          SolutionInputFile: '$(GitDirectoryExportedSolutions)\${{ parameters.SolutionInternalName }}UM.zip'
+          SolutionTargetFolder: '$(GitDirectoryExportedSolutions)\${{ parameters.SolutionInternalName }}Unmanaged'
+
+      - task: PowerShell@2  #Push unpacked Unmanaged Solution files to Git Repo
+        displayName: 'Solutions - UnmSol folders to repo'
+        inputs:
+          targetType: 'inline'
+          script: |      
+            # Write your PowerShell commands here.        
+            ls ${env:GitDirectoryExportedSolutions}
+            git config --global user.email ${{ parameters.gitUserEmail }}
+            git config --global user.name ${{ parameters.gitUserEmail }}
+            git checkout $(Build.SourceBranchName)
+            git add ${env:GitDirectoryExportedSolutions}\${{ parameters.SolutionInternalName }}Unmanaged
+            git commit -am "Added Solution ${{ parameters.SolutionInternalName }}Unmanaged V${{ parameters.SolutionVersionPrefix }}.$(Build.BuildNumber) unpacked"
+            git push origin $(Build.SourceBranchName)
+
+      - task: PowerPlatformExportSolution@2  #Export Managed Solution to machine as .zip file locally
+        displayName: 'Solutions - ManSol export zip locally'
+        inputs:
+          authenticationType: 'PowerPlatformSPN'
+          PowerPlatformSPN: ${{ parameters.connectionString }}
+          SolutionName: '${{ parameters.SolutionInternalName }}'
+          SolutionOutputFile: '$(GitDirectoryExportedSolutions)\${{ parameters.SolutionInternalName }}M.zip'
+          Managed: true
+          AsyncOperation: true
+          MaxAsyncWaitTime: '60'
+          ExportAutoNumberingSettings: true
+
+      - task: PowerShell@2  #Push Managed Solution .zip file to Git Repo
+        displayName: 'Solutions - ManSol zip to repo'
+        inputs:
+          targetType: 'inline'
+          script: |      
+            # Write your PowerShell commands here.        
+            ls ${env:GitDirectoryExportedSolutions}
+            git config --global user.email ${{ parameters.gitUserEmail }}
+            git config --global user.name ${{ parameters.gitUserEmail }}
+            git checkout $(Build.SourceBranchName)
+            git add ${env:GitDirectoryExportedSolutions}
+            git commit -am "Added Solution Export ${{ parameters.SolutionInternalName }}M V${{ parameters.SolutionVersionPrefix }}.$(Build.BuildNumber) as zip"        
+            git push origin $(Build.SourceBranchName)
+
+      - task: PowerPlatformUnpackSolution@2 #Unpack Managed Solution .zip file locally
+        displayName: 'Solutions - ManSol zip unpack locally'
+        inputs:
+          SolutionInputFile: '$(GitDirectoryExportedSolutions)\${{ parameters.SolutionInternalName }}M.zip'
+          SolutionTargetFolder: '$(GitDirectoryExportedSolutions)\${{ parameters.SolutionInternalName }}Managed' 
+          SolutionType: Managed 
+        
+      - task: PowerShell@2  #Push unpacked Managed Solution files to Git repo
+        displayName: 'Solutions - ManSol folders to repo'    
+        inputs:
+          targetType: 'inline'
+          script: |      
+            # Write your PowerShell commands here.        
+            ls ${env:GitDirectoryExportedSolutions}
+            git config --global user.email ${{ parameters.gitUserEmail }}
+            git config --global user.name ${{ parameters.gitUserEmail }}
+            git checkout $(Build.SourceBranchName)
+            git add ${env:GitDirectoryExportedSolutions}\${{ parameters.SolutionInternalName }}Managed
+            git commit -am "Added Solution ${{ parameters.SolutionInternalName }}Managed V${{ parameters.SolutionVersionPrefix }}.$(Build.BuildNumber) unpacked"
+            git push origin $(Build.SourceBranchName)
