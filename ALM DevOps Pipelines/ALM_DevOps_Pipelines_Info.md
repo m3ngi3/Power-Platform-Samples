@@ -6,3 +6,5 @@
 - The folder [**Pipelines**](./Pipelines) should be the place where the Pipelines. Remember to give the correct path when saving a freshly created Pipeline in the Azure DevOps interface.
     - In the root folder the actual Pipeline definition lives.
     - A [**Templates**](./Pipelines/Templates/) subfolder will contain any reusable template.
+
+    Test
